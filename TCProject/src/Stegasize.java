@@ -13,27 +13,31 @@ public class Stegasize {
 	public static void main(String[] args) {
 		String imageFilename = null,messageFilename = null,outputFilename = null;
 		if( args.length == 0 ) {
-			System.out.println("Using test image/message");
 			imageFilename = "defaultImage.png";
 			messageFilename = "defaultMessage";
 			outputFilename = "defaultOutput.png";
 		} else if(args.length == 1 ) {
 			imageFilename = args[0];
+			outputFilename = "decodedMessage.txt";
 		} else if( args.length == 2 ) {
 			imageFilename = args[0];
-			messageFilename = args[1];
-			outputFilename = "m"+imageFilename;
+			outputFilename = args[1];
 		} else if( args.length == 3 ) {
 			imageFilename = args[0];
 			messageFilename = args[1];
 			outputFilename = args[2];
 		} else {
-			System.out.println("Usage: \"Stagasize image_filename message_filename [output_filename]\"");
+			System.out.println("Usages:");
+			System.out.println("debug -> \"Stegasize\"");
+			System.out.println("decode to stdout -> \"Stegasize imageFilename\"");
+			System.out.println("decode to file -> \"Stegasize imageFilename outputFilename\"");
+			System.out.println("encode -> \"Stegasize imageFilename messageFilename outputImageFilename\"");
 			System.exit(0);
 		}
 		
 		File iFile = new File( imageFilename );
 		BufferedImage image = null;
+		
 		try {
 			image = ImageIO.read(iFile);
 		} catch (IOException e1) {
@@ -41,12 +45,20 @@ public class Stegasize {
 			System.exit(1);
 		}
 		
-		if( args.length == 1 ) {
+		if( args.length == 1 || args.length == 2 ) {
 			// Decoding
 			
 			String message = decode(image);
 			
 			System.out.println(message);
+			if( args.length == 2 ) {
+				try {
+					Files.write(Paths.get(outputFilename), message.getBytes() );
+				} catch (IOException e) {
+					System.out.println("Failed writing to the output file: \"" + outputFilename + "\".");
+					System.exit(1);
+				}
+			}
 			
 		} else {
 			// Encoding
@@ -56,24 +68,22 @@ public class Stegasize {
 				message = new String(Files.readAllBytes(Paths.get(messageFilename)), Charset.defaultCharset());
 			} catch (IOException e) {
 				System.out.println("Failed reading the message file: \"" + messageFilename + "\".");
-				e.printStackTrace();
 				System.exit(1);
 			}
 			
 			BufferedImage outputImage = encode(image, message);
 			if( outputImage == null ) {
-				System.out.println("Unable to fit message within image.  Use larger image or smaller message.");
+				System.out.println("Unable to fit the message within image.  Use larger image or smaller message.");
 				System.exit(0);
 			}
+			
 			File outputFile = new File(outputFilename);
 			try {
-				System.out.println("Writing output file");
 				ImageIO.write(outputImage, "PNG", outputFile);
 			} catch (IOException e) {
-				System.out.println("Failed writing the output image to \"" + outputFilename + "\"");
+				System.out.println("Failed writing to the output image: \"" + outputFilename + "\"");
 				System.exit(1);
 			}
-			System.out.println("Done!");
 		}
 	}
 	
