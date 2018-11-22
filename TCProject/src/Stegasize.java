@@ -18,7 +18,7 @@ public class Stegasize {
 			messageFilename = "defaultMessage";
 			outputFilename = "defaultOutput.png";
 		} else if(args.length == 1 ) {
-			imageFilename = args[1];
+			imageFilename = args[0];
 		} else if( args.length == 2 ) {
 			imageFilename = args[0];
 			messageFilename = args[1];
@@ -46,7 +46,6 @@ public class Stegasize {
 			
 			String message = decode(image);
 			
-			System.out.println("Extracted message is:");
 			System.out.println(message);
 			
 		} else {
@@ -64,6 +63,7 @@ public class Stegasize {
 			BufferedImage outputImage = encode(image, message);
 			if( outputImage == null ) {
 				System.out.println("Unable to fit message within image.  Use larger image or smaller message.");
+				System.exit(0);
 			}
 			File outputFile = new File(outputFilename);
 			try {
@@ -71,26 +71,27 @@ public class Stegasize {
 				ImageIO.write(outputImage, "PNG", outputFile);
 			} catch (IOException e) {
 				System.out.println("Failed writing the output image to \"" + outputFilename + "\"");
+				System.exit(1);
 			}
 			System.out.println("Done!");
 		}
 	}
 	
-	private static BufferedImage encode( BufferedImage imIn, String message ) {
-		BufferedImage imOut = imIn;
+	private static BufferedImage encode( BufferedImage im, String message ) {
 		byte[] bytes = message.getBytes();
-		if( (bytes.length + 1) * 8 > imOut.getHeight() * imOut.getWidth() * 3 ) {
+		int numBits = im.getHeight() * im.getWidth() * 3;
+		if( (bytes.length + 1) * 8 > numBits ) {
 			return null;
 		}
 		
-		BitSet bits = new BitSet(imOut.getHeight() * imOut.getWidth() * 3);
-		bits.clear(0, (imOut.getHeight() * imOut.getWidth() * 3)-1);
+		BitSet bits = new BitSet(numBits);
+		bits.clear(0, (im.getHeight() * im.getWidth() * 3) - 1);
 		bits.or(BitSet.valueOf(bytes));
 		
 		int bIndex = 0;
-		for( int y = 0; y < imOut.getHeight(); y++ ) {
-			for( int x = 0; x < imOut.getWidth(); x++ ) {
-				int pixel = imOut.getRGB(x, y);
+		for( int y = 0; y < im.getHeight(); y++ ) {
+			for( int x = 0; x < im.getWidth(); x++ ) {
+				int pixel = im.getRGB(x, y);
 				
 				int a = (pixel >> 24) & 0xff;
 				int r = (pixel >> 16) & 0xff;
@@ -103,16 +104,31 @@ public class Stegasize {
 				
 				pixel = (a << 24) | (r << 16) | (g << 8) | b;
 				
-				imOut.setRGB(x, y, pixel);
+				im.setRGB(x, y, pixel);
 			}
 		}
-		
-		return imOut;
+		return im;
 	}
 	
 	private static String decode( BufferedImage image ) {
-		String message = "";
+		BitSet bits = new BitSet(image.getHeight() * image.getWidth() * 3);
 		
-		return message;
+		int bIndex = 0;
+		for( int y = 0; y < image.getHeight(); y++ ) {
+			for( int x = 0; x < image.getWidth(); x++ ) {
+				int pixel = image.getRGB(x, y);
+				
+				//int a = (pixel >> 24) & 0xff;
+				int r = (pixel >> 16) & 0xff;
+				int g = (pixel >> 8) & 0xff;
+				int b = (pixel) & 0xff;
+				
+				bits.set(bIndex++, r % 2 == 1);
+				bits.set(bIndex++, g % 2 == 1);
+				bits.set(bIndex++, b % 2 == 1);
+			}
+		}
+		
+		return new String(bits.toByteArray(), Charset.defaultCharset());
 	}
 }
