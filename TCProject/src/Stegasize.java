@@ -12,11 +12,7 @@ public class Stegasize {
 
 	public static void main(String[] args) {
 		String imageFilename = null,messageFilename = null,outputFilename = null;
-		if( args.length == 0 ) {
-			imageFilename = "defaultImage.png";
-			messageFilename = "defaultMessage";
-			outputFilename = "defaultOutput.png";
-		} else if(args.length == 1 ) {
+		if(args.length == 1 ) {
 			imageFilename = args[0];
 			outputFilename = "decodedMessage.txt";
 		} else if( args.length == 2 ) {
@@ -28,7 +24,6 @@ public class Stegasize {
 			outputFilename = args[2];
 		} else {
 			System.out.println("Usages:");
-			System.out.println("debug -> \"Stegasize\"");
 			System.out.println("decode to stdout -> \"Stegasize imageFilename\"");
 			System.out.println("decode to file -> \"Stegasize imageFilename outputFilename\"");
 			System.out.println("encode -> \"Stegasize imageFilename messageFilename outputImageFilename\"");
